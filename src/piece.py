@@ -1,8 +1,5 @@
 from enum import IntEnum
 
-from PIL import ImageTk, Image
-import tkinter as tk
-
 piece_name = {
     0: "pawn",
     1: "king",

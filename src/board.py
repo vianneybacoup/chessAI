@@ -1,10 +1,10 @@
 import tkinter as tk
 
 from piece import PieceType
-        
+
 
 class Board(tk.Canvas):
-    selected = None
+    selected = [-1, -1]
     def __init__(self, parent):
         tk.Canvas.__init__(self, parent, width=800, height=800, borderwidth=0)
         self.master = parent
@@ -24,7 +24,7 @@ class Board(tk.Canvas):
             for j in range(8):
                 self.pieces[i].append(PieceType.NONE)
 
-        self.images = []
+        self.images = {}
 
         self.newgame()
         self.display()
@@ -62,27 +62,66 @@ class Board(tk.Canvas):
         for i in range(8):
             for j in range(8):
                 img = tk.PhotoImage(file=self.pieces[i][j].image_location())
-                self.create_image(j * 100 + 50, (7 - i) * 100 + 50, image=img, tag=str(i) + "-" + str(j))
-                self.images.append(img)
+                self.create_image(j * 100 + 50, (7 - i) * 100 + 50, image=img, tag=self.get_tag(i, j))
+                self.images[self.get_tag(i, j)] = img
 
+    # Actions
+    def move(self, x, y):
+        tag = self.get_tag(x, y)
+        selected_tag = self.get_tag(*self.selected)
+
+        if (x < 0 or x > 7 or y < 0 or y > 7) or (tag == selected_tag):
+            self.coords(selected_tag, self.selected[1] * 100 + 50, (7 - self.selected[0]) * 100 + 50)
+            return
+
+        if tag in self.images:
+            self.delete(tag)
+            self.images.pop(tag)
+
+        self.coords(selected_tag, y * 100 + 50, (7 - x) * 100 + 50)
+        self.itemconfig(selected_tag, tag=tag)
+        self.images[tag] = self.images[selected_tag]
+        self.images.pop(selected_tag)
+
+    # Getters
     def get_coords(self, event):
         return int(7 - (event.y - (event.y % 100)) / 100), int((event.x - (event.x % 100)) / 100)
 
+    def get_tag(self, x, y):
+        return (str(x) + "-" + str(y))
+
+    # Bindings functions
     def mouse_moved(self, event):
-        if self.selected is not None:
-            self.coords(self.selected, event.x, event.y)
+        if self.selected != [-1, -1]:
+            X = event.x
+            Y = event.y
+
+            if X < 50:
+                X = 50
+            elif X > 750:
+                X = 750
+                
+            if Y < 50:
+                Y = 50
+            elif Y > 750:
+                Y = 750
+
+            selected_tag = self.get_tag(*self.selected)
+            self.coords(selected_tag, X, Y)
 
     def mouse_press(self, event):
         x, y = self.get_coords(event)
-        self.selected = str(x) + "-" + str(y)
-        self.coords(self.selected, event.x, event.y)
+        self.selected = [x, y]
+        selected_tag = self.get_tag(*self.selected)
+
+        self.tag_raise(selected_tag)
+        self.coords(selected_tag, event.x, event.y)
     
     def mouse_release(self, event):
         x, y = self.get_coords(event)
-        if self.selected is not None:
-            self.coords(self.selected, y * 100 + 50, (7 - x) * 100 + 50)
-            self.itemconfig(self.selected, tag=str(x) + "-" + str(y))
-            self.selected = None
+        if self.selected != [-1, -1]:
+            self.move(x, y)
+            self.selected = [-1, -1]
 
 class Game(tk.Tk):
     def __init__(self):
