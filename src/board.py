@@ -27,7 +27,6 @@ class Board(tk.Canvas):
         self.images = {}
 
         self.newgame()
-        self.display()
         
         self.bind('<B1-Motion>', self.mouse_moved)
         self.bind('<Button-1>', self.mouse_press)
@@ -58,7 +57,6 @@ class Board(tk.Canvas):
         self.pieces[7][3] = PieceType.BLACK_QUEEN
         self.pieces[7][4] = PieceType.BLACK_KING
 
-    def display(self):
         for i in range(8):
             for j in range(8):
                 img = tk.PhotoImage(file=self.pieces[i][j].image_location())
@@ -81,6 +79,8 @@ class Board(tk.Canvas):
         self.coords(selected_tag, y * 100 + 50, (7 - x) * 100 + 50)
         self.itemconfig(selected_tag, tag=tag)
         self.images[tag] = self.images[selected_tag]
+
+        self.delete(selected_tag)
         self.images.pop(selected_tag)
 
     # Getters
@@ -111,6 +111,9 @@ class Board(tk.Canvas):
 
     def mouse_press(self, event):
         x, y = self.get_coords(event)
+        if not self.get_tag(x, y) in self.images:
+            return
+
         self.selected = [x, y]
         selected_tag = self.get_tag(*self.selected)
 
